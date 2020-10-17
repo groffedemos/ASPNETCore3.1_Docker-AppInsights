@@ -1,0 +1,34 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    env:
+      NOME_WEBAPP_AZURE: groffeanpturma3
+      NOME_IMAGEM: apicontagem
+      IMAGEM_AZURE: ${{ secrets.AZURE_CONTAINER_REGISTRY_SERVER }}/$NOME_IMAGEM
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+  
+    - name: Logando no Container Registry
+      uses: docker/login-action@v1.5.0
+      with:
+        username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+        registry: ${{ secrets.AZURE_CONTAINER_REGISTRY_SERVER }}
+        
+    - name: Build e Push no Azure Container Registry
+      run: |
+        docker build . --file Dockerfile --tag ${{ env.IMAGEM_AZURE }}:latest
+        docker tag ${{ env.IMAGEM_AZURE }}:latest ${{ env.IMAGEM_AZURE }}:$GITHUB_RUN_NUMBER
+        docker images ${{ env.IMAGEM_AZURE }}
+        docker push ${{ env.IMAGEM_AZURE }}
